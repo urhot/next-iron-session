@@ -3,13 +3,16 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Session, withIronSession } from "next-iron-session";
 
 // optionally add stronger typing for next-specific implementation
-export type NextIronRequest = NextApiRequest & { session: Session };
-export type NextIronHandler = (
-  req: NextIronRequest,
-  res: NextApiResponse,
-) => void | Promise<void>;
+export type NextIronRequest = NextApiRequest & { session: Session, locale: string };
 
-const withSession = (handler: NextIronHandler) =>
+export type NextIronHandler<T> =
+  ((req: NextIronRequest, res: NextApiResponse) => void | Promise<void>) |
+  ((context: {
+    req: NextIronRequest;
+    res: NextApiResponse;
+  }) => T | Promise<T>);
+
+const withSession = <T>(handler: NextIronHandler<T>) =>
   withIronSession(handler, {
     password: process.env.SECRET_COOKIE_PASSWORD,
     cookieName: "next-iron-session/examples/next.js",

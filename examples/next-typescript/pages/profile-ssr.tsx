@@ -1,9 +1,11 @@
 import React from "react";
 import Layout from "../components/Layout";
-import withSession from "../lib/session";
+import withSession, { NextIronRequest } from "../lib/session";
 import PropTypes from "prop-types";
+import { NextApiResponse } from "next";
+import { UserProps } from "../lib/user";
 
-const SsrProfile = ({ user }) => {
+const SsrProfile = ({ user, locale }: UserProps & { locale: string }) => {
   return (
     <Layout>
       <h1>Your GitHub profile</h1>
@@ -28,24 +30,35 @@ const SsrProfile = ({ user }) => {
           <pre>{JSON.stringify(user, undefined, 2)}</pre>
         </>
       )}
+
+      <div>
+        locale: <code>{ locale ?? 'not set!' }</code>
+      </div>
     </Layout>
   );
 };
 
-export const getServerSideProps = withSession(async function ({ req, res }) {
-  const user = req.session.get("user");
+export const getServerSideProps = withSession<{ props: UserProps | {} }>(
+  async ({ req, res, locale }: { req: NextIronRequest, res: NextApiResponse, locale: string }) => {
+    const user = req.session.get("user");
 
-  if (user === undefined) {
-    res.setHeader("location", "/login");
-    res.statusCode = 302;
-    res.end();
-    return { props: {} };
-  }
+    console.log('locale provided to getServerSideProps: ' + locale);
 
-  return {
-    props: { user: req.session.get("user") },
-  };
-});
+    if (user === undefined) {
+      res.setHeader("location", "/login");
+      res.statusCode = 302;
+      res.end();
+      return { props: { locale: locale } };
+    }
+
+    return {
+      props: {
+        user: user,
+        locale: locale,
+      },
+    };
+  },
+);
 
 export default SsrProfile;
 
